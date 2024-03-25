@@ -18,10 +18,10 @@ end
 
 function [operatingSystem, appNameWithExt] = getOperatingSystem()
     if ispc
-        error('Platform not supported');
+        operatingSystem = 'windows';
+        appNameWithExt = 'qtest.exe';
     elseif ismac
-        operatingSystem = 'macOS';
-        appNameWithExt = 'qtest.app';
+        error('Platform not supported');
     else
         error('Platform not supported');
     end
@@ -119,7 +119,8 @@ function qversion = getVersionFromGit()
             
             qversion = getVersionString(tag, codeChangeDetected);
         else
-            error('Error: Unable to retrieve the latest tag.');
+            warning('Error: Unable to retrieve the latest tag. Check if git is installed.');
+            qversion = "2.1.1";
         end
 
     else
