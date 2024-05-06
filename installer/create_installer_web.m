@@ -136,7 +136,7 @@ function qversion = getVersionFromGit()
 end
 
 function qversion = defaultVersion()
-    qversion = '2.1.2';
+    qversion = '2.1.3';
 end
 
 function versionString = getVersionString(tag, codeChanged)
