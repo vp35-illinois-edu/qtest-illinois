@@ -21,7 +21,7 @@ To use the QTEST source code directly in MATLAB:
 
 ## Download
 
-You can download the latest version of QTEST from our [GitHub releases page](https://github.com/Emily-Line-UIUC/qtest/releases).
+You can download the latest version of QTEST from our [GitHub releases page](https://github.com/illinois/qtest/releases).
 
 ## More Information
 
