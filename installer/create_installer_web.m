@@ -1,19 +1,66 @@
 function main()
     clearvars;
     clc;
+    checkRequiredToolboxes();
 
     global rootDir;
     % Determine the operating system and architecture
     [operatingSystem, appNameWithExt] = getOperatingSystem();
 
     % Set up directories
-    [currentBuildDir, installerOutputDir, srcDir] = setupDirectories(operatingSystem);
+    [currentBuildDir, installerOutputDir, srcDir, currentFileDir] = setupDirectories(operatingSystem);
+
+    if ismac        
+        envFilePath = fullfile(currentFileDir, 'mac_signing', 'apple.env');
+        if ~isfile(envFilePath)
+            error('apple.env not found. Create a copy of apple_template.env, fill the values and rename it to apple.env.');
+        end
+        
+        loadenv(envFilePath);
+        setenv('QTEST_VERSION', getVersionFromGit());
+
+        disp('Signing dependencies');
+        command = fullfile(currentFileDir, 'mac_signing', 'prebuild.sh');
+        [status, cmdout] = system(command); 
+        disp(cmdout);
+    end
 
     % Compile MATLAB code
     compileMATLABCode(currentBuildDir, appNameWithExt);
 
-    % Package the application
-    packageApplication(currentBuildDir, installerOutputDir, appNameWithExt);
+    if ismac
+        disp('Signing application');
+        command = fullfile(currentFileDir, 'mac_signing', 'prepackaging.sh');
+        [status, cmdout] = system(command); 
+        disp(cmdout);
+
+        disp('Creating installer');
+        command = fullfile(currentFileDir, 'mac_signing', 'postpackaging.sh');
+        [status, cmdout] = system(command); 
+        disp(cmdout);
+    else 
+        disp('Creating installer');
+        % Package the application
+        packageApplication(currentBuildDir, installerOutputDir, appNameWithExt);
+    end
+
+    disp('Installer creation done');
+end
+
+function checkRequiredToolboxes()
+    requiredToolboxes = {'MATLAB Compiler', ...
+                         'Statistics and Machine Learning Toolbox', ...
+                         'Optimization Toolbox', ...
+                         'Parallel Computing Toolbox'};
+    
+    v = ver;
+    installedToolboxes = {v.Name};
+    
+    for i = 1:length(requiredToolboxes)
+        if ~ismember(requiredToolboxes{i}, installedToolboxes)
+            error('Required toolbox "%s" is not installed. Please install it to proceed.', requiredToolboxes{i});
+        end
+    end
 end
 
 function [operatingSystem, appNameWithExt] = getOperatingSystem()
@@ -28,7 +75,7 @@ function [operatingSystem, appNameWithExt] = getOperatingSystem()
     end
 end
 
-function [currentBuildDir, installerOutputDir, srcDir] = setupDirectories(operatingSystem)
+function [currentBuildDir, installerOutputDir, srcDir, currentFileDir] = setupDirectories(operatingSystem)
     global rootDir;
     
     currentFile = mfilename('fullpath');
@@ -82,7 +129,8 @@ function opts = createPackagingOptions(installerOutputDir)
     opts.AuthorEmail = 'regenwet@illinois.edu';
     opts.AuthorCompany = 'UIUC';
     opts.Version = getVersionFromGit();
-    opts.InstallerName = 'qtest_Installer_web';
+    opts.InstallerName = determineInstallerName();
+    
     opts.OutputDir = installerOutputDir;
     opts.Description = 'QTEST is a custom-designed public-domain statistical analysis package for order-constrained inference.';
     opts.Summary = 'QTEST is a custom-designed public-domain statistical analysis package for order-constrained inference.';
@@ -131,7 +179,7 @@ function qversion = getVersionFromGit()
     end
 
     % Return to the original directory
-    fprintf("Reverting current directory back to %s", currentDir);
+    fprintf("Reverting current directory back to %s\n", currentDir);
     cd(currentDir);
 end
 
@@ -168,6 +216,22 @@ function [majorVersion, minorVersion, patchVersion] = getMMPFromTag(versionStr)
         error('Invalid version format in version string %s', versionStr);
     end
 
+end
+
+function installerName = determineInstallerName()
+    if ispc
+        installerName = 'win64_qtest_Installer';
+    elseif ismac
+        if strcmp(computer('arch'), 'maci64')
+            installerName = 'maci64_qtest_Installer';
+        elseif strcmp(computer('arch'), 'maca64')
+            installerName = 'maca64_qtest_Installer';
+        else
+            error('Unsupported Mac architecture');
+        end
+    else
+        error('Unsupported platform');
+    end
 end
 
 function displayPackagingOptions(opts)
