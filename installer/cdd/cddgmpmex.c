@@ -1,3 +1,7 @@
+/* cddgmpmex.c: Modified cddmex.c file to use gmp for calculations.
+   For details of proper Matlab call check accompanying cddmex.m file.
+*/
+
 /* cddmex.c: Main program to call cdd library from Matlab (as a mex file).
    For details of proper Matlab call check accompanying cddmex.m file.
 
@@ -67,7 +71,7 @@ mxArray * MB_set_LPsol_MatrixPtr(const dd_LPPtr lp)
     		tmpx = mxCreateDoubleMatrix((lp->d)-1, 1, mxREAL);
     		x = mxGetPr(tmpx);
     		for (ii=1; ii<=(lp->d)-1; ii++)
-    			x[ii-1]=(double)(lp->sol[ii])[0];
+				x[ii-1] = mpq_get_d(lp->sol[ii]);
 		mxSetField(P, 0, "xopt", tmpx);
 
     		/* store Lagrange multipliers (i.e. dual solution) */
@@ -79,7 +83,7 @@ mxArray * MB_set_LPsol_MatrixPtr(const dd_LPPtr lp)
 		for (ii=1; ii<lp->d; ii++){
 			if (lp->nbindex[ii+1]>0) {
 				nactive++;
-				y[lp->nbindex[ii+1]-1]=(lp->dsol[ii])[0];
+				y[lp->nbindex[ii+1]-1] = mpq_get_d(lp->dsol[ii]);
 			}
 		}
 		mxSetField(P, 0, "lambda", tmpy);
@@ -93,7 +97,7 @@ mxArray * MB_set_LPsol_MatrixPtr(const dd_LPPtr lp)
 		/* store objective value */
 		tmpobj = mxCreateDoubleMatrix(1, 1, mxREAL);
     		obj = mxGetPr(tmpobj);
-		obj[0]=(lp->optvalue)[0];
+		obj[0] = mpq_get_d(lp->optvalue);
       		mxSetField(P, 0, "objlp", tmpobj);
 
 		/* store nonbasis */
@@ -117,34 +121,51 @@ mxArray * MB_set_LPsol_MatrixPtr(const dd_LPPtr lp)
 	
 dd_MatrixPtr FT_get_H_MatrixPtr(const mxArray * in)
 {
-	mxArray * tmpa;	
-	mxArray * tmpb;	
+	mxArray * tmpanum;
+	mxArray * tmpaden;
+	mxArray * tmpbnum;
+	mxArray * tmpbden;
 	mxArray * tmpl;	
 	dd_MatrixPtr A;
 	int eqsize, m, n, i, j;
-	double * a;
-	double * b;
+	double * anum;
+	double * aden;
+	double * bnum;
+	double * bden;
 	double * lin;
 	
-	if ((tmpa = mxGetField(in, 0, "A")) && 
-	    (tmpb = mxGetField(in, 0, "B")) &&
-	    (mxGetNumberOfDimensions(tmpa) <= 2) &&
-	    (mxGetNumberOfDimensions(tmpb) <= 2) &&
-	    (mxGetM(tmpa) == mxGetM(tmpb)) &&
-	    (mxGetN(tmpb) == 1)) {
-		m = mxGetM(tmpa);
-		n = mxGetN(tmpa) + 1;
-		a = mxGetPr(tmpa);
-		b = mxGetPr(tmpb);		
+	if ((tmpanum = mxGetField(in, 0, "ANum")) &&
+	    (tmpaden = mxGetField(in, 0, "ADen")) &&
+	    (tmpbnum = mxGetField(in, 0, "BNum")) &&
+	    (tmpbden = mxGetField(in, 0, "BDen")) &&
+	    (mxGetNumberOfDimensions(tmpanum) <= 2) &&
+	    (mxGetNumberOfDimensions(tmpaden) <= 2) &&
+	    (mxGetNumberOfDimensions(tmpbnum) <= 2) &&
+	    (mxGetNumberOfDimensions(tmpbden) <= 2) &&
+	    (mxGetM(tmpanum) == mxGetM(tmpaden)) &&
+		(mxGetM(tmpbnum) == mxGetM(tmpbden)) &&
+		(mxGetN(tmpanum) == mxGetN(tmpaden)) &&
+		(mxGetN(tmpbnum) == mxGetN(tmpbden)) &&
+		(mxGetM(tmpanum) == mxGetM(tmpbnum)) &&
+	    (mxGetM(tmpaden) == mxGetM(tmpbden)) &&
+	    (mxGetN(tmpbnum) == 1) &&
+		(mxGetN(tmpbden) == 1)) {
+		m = mxGetM(tmpanum);
+		n = mxGetN(tmpanum) + 1;
+
+		anum = mxGetPr(tmpanum);
+		aden = mxGetPr(tmpaden);
+		bnum = mxGetPr(tmpbnum);
+		bden = mxGetPr(tmpbden);
 		A = dd_CreateMatrix(m, n);
 		for (i = 0; i < m; i++) {
-			dd_set_d(A->matrix[i][0],b[i]);
+			dd_set_si2(A->matrix[i][0],bnum[i], bden[i]);
 			for (j = 0; j < n - 1; j++) {
-				dd_set_d(A->matrix[i][j + 1],- a[j * m + i]);
+				dd_set_si2(A->matrix[i][j + 1],- anum[j * m + i], aden[j * m + i]);
 			}
 		}
 		A->representation = dd_Inequality;		
-		A->numbtype = dd_Real;
+		A->numbtype = dd_Rational;
 		/* set lineality if present */
 		if ((tmpl = mxGetField(in, 0, "lin")) &&
 		    (mxGetNumberOfDimensions(tmpl) <= 2) && 
@@ -285,40 +306,53 @@ mxArray * FT_set_V_MatrixPtr(const dd_MatrixPtr M)
 
 dd_MatrixPtr FT_get_V_MatrixPtr(const mxArray * in)
 {
-	mxArray * tmpv;	
+	mxArray * tmpvnum;
+	mxArray * tmpvden;
 	mxArray * tmpr;	
 	dd_MatrixPtr V;
-	int mr, m, n, i, j;
-	double * v;
+	int mr, m, n, i, j, m2, n2;
+	double * vn;
+	double * vd;
 	double * r;
 	
-	if ((tmpv = mxGetField(in, 0, "V")) && 
-	    (mxGetNumberOfDimensions(tmpv) <= 2)) {
+	if ((tmpvnum = mxGetField(in, 0, "VNum")) &&
+	    (mxGetNumberOfDimensions(tmpvnum) <= 2) &&
+		(tmpvden = mxGetField(in, 0, "VDen")) &&
+	    (mxGetNumberOfDimensions(tmpvden) <= 2)) {
 	    	
 		if ((tmpr = mxGetField(in, 0, "R")) && 
-	    	    (mxGetNumberOfDimensions(tmpv) <= 2)) {
+			(mxGetNumberOfDimensions(tmpvnum) <= 2)) {
 	    	    	mr = mxGetM(tmpr);
 	    	    	r = mxGetPr(tmpr);
 		} else mr = 0;
 	    		    
-		m = mxGetM(tmpv);
-		n = mxGetN(tmpv) + 1;
-		v = mxGetPr(tmpv);
+		m = mxGetM(tmpvnum);
+		n = mxGetN(tmpvnum) + 1;
+
+		m2 = mxGetM(tmpvden);
+		n2 = mxGetN(tmpvden) + 1;
+
+		if(m != m2 || n != n2) {
+			mexErrMsgTxt("Numerator and Denominator dimension mismatch");
+		}
+
+		vn = mxGetPr(tmpvnum);
+		vd = mxGetPr(tmpvden);
 		V = dd_CreateMatrix(m + mr, n);
 		for (i = 0; i < m; i++) {
-			dd_set_si(V->matrix[i][0],1);
+			dd_set_si2(V->matrix[i][0],1, 1);
 			for (j = 0; j < n - 1; j++) {
-				dd_set_d(V->matrix[i][j + 1], v[i + j * m]);
+				dd_set_si2(V->matrix[i][j + 1], vn[i + j * m], vd[i + j * m]);
 			}
 		}
 		for (i = m; i < m + mr; i++) {
-			dd_set_si(V->matrix[i][0],0);
+			dd_set_si2(V->matrix[i][0],0, 1);
 			for (j = 0; j < n - 1; j++) {
-				dd_set_d(V->matrix[i][j + 1], r[(i - m) + j * mr]);
+				dd_set_si2(V->matrix[i][j + 1], r[(i - m) + j * mr], 1);
 			}
 		}		
 		V->representation = dd_Generator;	
-		V->numbtype = dd_Real;
+		V->numbtype = dd_Rational;
 		return V;
 	}
 	return 0;
@@ -812,6 +846,175 @@ find_interior_DS(int nlhs, mxArray * plhs[], int nrhs, const mxArray * prhs[])
 	dd_FreeLPData(lp1);
 }
 
+void print_V(const dd_MatrixPtr V) {
+    if (V == NULL) {
+        mexPrintf("Matrix V is NULL\n");
+        return;
+    }
+
+    mexPrintf("Matrix V:\n");
+    for (int i = 0; i < V->rowsize; i++) {
+        for (int j = 0; j < V->colsize; j++) {
+            mexPrintf("%ld/%ld ",
+                V->matrix[i][j][0]._mp_num._mp_size == 0 ? 0 : V->matrix[i][j][0]._mp_num._mp_d[0],
+                V->matrix[i][j][0]._mp_den._mp_size == 0 ? 0 : V->matrix[i][j][0]._mp_den._mp_d[0]);
+        }
+        mexPrintf("\n");
+    }
+}
+
+void print_H(const dd_MatrixPtr H) {
+    if (H == NULL) {
+        mexPrintf("Matrix H is NULL\n");
+        return;
+    }
+
+    mexPrintf("Matrix H:\n");
+    for (int i = 0; i < H->rowsize; i++) {
+        for (int j = 0; j < H->colsize; j++) {
+            mexPrintf("%ld/%ld ",
+                H->matrix[i][j][0]._mp_num._mp_size == 0 ? 0 : H->matrix[i][j][0]._mp_num._mp_d[0],
+                H->matrix[i][j][0]._mp_den._mp_size == 0 ? 0 : H->matrix[i][j][0]._mp_den._mp_d[0]);
+        }
+        mexPrintf("\n");
+    }
+}
+
+// 3 steps
+// Reduce given V (Vnum, VDen) representation
+// Convert to H representation
+// Reduce H representation
+
+void reduce_all_hull(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+    dd_ErrorType err;
+    dd_MatrixPtr V, V1, H, H1;
+    dd_rowset red;
+    dd_PolyhedraPtr P;
+
+    if (nrhs == 1 && nlhs == 1 && mxIsStruct(prhs[0])) {
+        dd_set_global_constants();  /* First, this must be called. */
+
+        // Step 1: Reduce given V (Vnum, VDen) representation
+        V = FT_get_V_MatrixPtr(prhs[0]);
+
+		print_V(V);
+
+        red = dd_RedundantRows(V, &err); /* find redundant rows */
+        if (err == dd_NoError) {
+            V1 = dd_MatrixSubmatrix(V, red);
+            dd_FreeMatrix(V);
+            V = V1;
+        } else {
+            dd_WriteErrorMessages(stdout, err);
+            dd_FreeMatrix(V);
+            mexErrMsgTxt("Error reducing V representation");
+        }
+        set_free(red);
+
+        // Step 2: Convert to H representation
+        P = dd_DDMatrix2Poly(V, &err);
+		dd_FreeMatrix(V);
+
+        if (err != dd_NoError) {
+            dd_WriteErrorMessages(stdout, err);
+            mexErrMsgTxt("Error converting V to H representation");
+        }
+        H = dd_CopyInequalities(P);
+
+        print_H(H);
+
+        // Step 3: Reduce H representation
+        red = dd_RedundantRows(H, &err); /* find redundant rows */
+        if (err == dd_NoError) {
+            H1 = dd_MatrixSubmatrix(H, red);
+            dd_FreeMatrix(H);
+            H = H1;
+        } else {
+            dd_WriteErrorMessages(stdout, err);
+            dd_FreeMatrix(H);
+            dd_FreePolyhedra(P);
+            mexErrMsgTxt("Error reducing H representation");
+        }
+        set_free(red);
+
+        // Set the output
+        plhs[0] = FT_set_H_MatrixPtr(H);
+
+        // Free resources
+        dd_FreeMatrix(H);
+        dd_FreePolyhedra(P);
+    } else {
+        mexErrMsgTxt("reduce_all_hull expects a V input struct and produces a reduced H output struct");
+    }
+}
+
+// 3 steps
+// Reduce give H representation (ANum, ADen, BNum, BDen)
+// Convert to V representation
+// Reduce V representation
+void reduce_all_extreme(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+    dd_ErrorType err;
+    dd_MatrixPtr H, H1, V, V1;
+    dd_rowset red;
+    dd_PolyhedraPtr P;
+
+    if (nrhs == 1 && nlhs == 1 && mxIsStruct(prhs[0])) {
+        dd_set_global_constants();  /* First, this must be called. */
+
+        // Step 1: Reduce given H representation (ANum, ADen, BNum, BDen)
+        H = FT_get_H_MatrixPtr(prhs[0]);
+
+		print_H(H);
+
+        red = dd_RedundantRows(H, &err); /* find redundant rows */
+        if (err == dd_NoError) {
+            H1 = dd_MatrixSubmatrix(H, red);
+            dd_FreeMatrix(H);
+            H = H1;
+        } else {
+            dd_WriteErrorMessages(stdout, err);
+            dd_FreeMatrix(H);
+            mexErrMsgTxt("Error reducing H representation");
+        }
+        set_free(red);
+
+        // Step 2: Convert to V representation
+        P = dd_DDMatrix2Poly(H, &err);
+        dd_FreeMatrix(H);
+
+        if (err != dd_NoError) {
+            dd_WriteErrorMessages(stdout, err);
+            mexErrMsgTxt("Error converting H to V representation");
+        }
+        V = dd_CopyGenerators(P);
+
+        print_V(V);
+
+        // Step 3: Reduce V representation
+        red = dd_RedundantRows(V, &err); /* find redundant rows */
+        if (err == dd_NoError) {
+            V1 = dd_MatrixSubmatrix(V, red);
+            dd_FreeMatrix(V);
+            V = V1;
+        } else {
+            dd_WriteErrorMessages(stdout, err);
+            dd_FreeMatrix(V);
+            dd_FreePolyhedra(P);
+            mexErrMsgTxt("Error reducing V representation");
+        }
+        set_free(red);
+
+        // Set the output
+        plhs[0] = FT_set_V_MatrixPtr(V);
+
+        // Free resources
+        dd_FreeMatrix(V);
+        dd_FreePolyhedra(P);
+    } else {
+        mexErrMsgTxt("reduce_all_extreme expects an H input struct and produces a reduced V output struct");
+    }
+}
+
 void
 mexFunction(int nlhs, mxArray * plhs[], int nrhs, const mxArray * prhs[])
 {
@@ -881,6 +1084,14 @@ mexFunction(int nlhs, mxArray * plhs[], int nrhs, const mxArray * prhs[])
 		}
 		if (strcmp(input_buf,"version\0") == 0) {
 			printf("Version %s\n", CDDMEX_VERSION);
+			return;
+		}
+		if (strcmp(input_buf,"reduce_all_hull\0") == 0) {
+			reduce_all_hull(nlhs, plhs, nrhs -1, prhs + 1);
+			return;
+		}
+		if (strcmp(input_buf,"reduce_all_extreme\0") == 0) {
+			reduce_all_extreme(nlhs, plhs, nrhs -1, prhs + 1);
 			return;
 		}
 		mexErrMsgTxt("Unknown function");		
