@@ -32,6 +32,10 @@ function main()
         end
         
         loadenv(envFilePath);
+        disp('Signing dependencies');
+        command = fullfile(currentFileDir, 'windows_signing', 'prebuild.bat');
+        [status, cmdout] = system(command); 
+        disp(cmdout);
     end
 
     % Compile MATLAB code
@@ -48,9 +52,20 @@ function main()
         [status, cmdout] = system(command); 
         disp(cmdout);
     else 
+        disp('Signing application');
+        command = fullfile(currentFileDir, 'windows_signing', 'prepackaging.bat');
+        [status, cmdout] = system(command); 
+        disp(cmdout);
+
         disp('Creating installer');
         % Package the application
         packageApplication(currentBuildDir, installerOutputDir, appNameWithExt);
+
+        disp('Signing installer');
+        command = fullfile(currentFileDir, 'windows_signing', 'postpackaging.bat');
+        [status, cmdout] = system(command); 
+        disp(cmdout);
+
     end
 
     disp('Installer creation done');
