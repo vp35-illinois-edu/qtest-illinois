@@ -1,1 +1,4 @@
 windows.env
+azure-cli*
+microsoft.trusted.signing.client*
+SignTool*
