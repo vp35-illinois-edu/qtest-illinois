@@ -32,18 +32,18 @@ set SCRIPT_PATH=%~dp0
 set ROOT_PATH=%SCRIPT_PATH%..\..
 set BASE_PATH=%ROOT_PATH%\src
 
-@REM REM Unzip necessary files
-@REM echo Unzipping azure-cli-2.69.0-x64.zip
-@REM powershell -Command "Expand-Archive -Path '%SCRIPT_PATH%azure-cli-2.69.0-x64.zip' -DestinationPath '%SCRIPT_PATH%azure-cli'"
-@REM call :check_command_status "unzip azure-cli-2.69.0-x64.zip"
+REM Unzip necessary files
+echo Unzipping azure-cli-2.69.0-x64.zip
+powershell -Command "Expand-Archive -Path '%SCRIPT_PATH%azure-cli-2.69.0-x64.zip' -DestinationPath '%SCRIPT_PATH%azure-cli'"
+call :check_command_status "unzip azure-cli-2.69.0-x64.zip"
 
-@REM echo Unzipping SignTool-10.0.22621.6-x64.zip
-@REM powershell -Command "Expand-Archive -Path '%SCRIPT_PATH%SignTool-10.0.22621.6-x64.zip' -DestinationPath '%SCRIPT_PATH%SignTool'"
-@REM call :check_command_status "unzip SignTool-10.0.22621.6-x64.zip"
+echo Unzipping SignTool-10.0.22621.6-x64.zip
+powershell -Command "Expand-Archive -Path '%SCRIPT_PATH%SignTool-10.0.22621.6-x64.zip' -DestinationPath '%SCRIPT_PATH%SignTool'"
+call :check_command_status "unzip SignTool-10.0.22621.6-x64.zip"
 
-@REM echo Unzipping microsoft.trusted.signing.client.1.0.76.zip
-@REM powershell -Command "Expand-Archive -Path '%SCRIPT_PATH%microsoft.trusted.signing.client.1.0.76.zip' -DestinationPath '%SCRIPT_PATH%microsoft.trusted.signing.client'"
-@REM call :check_command_status "unzip microsoft.trusted.signing.client.1.0.76.zip"
+echo Unzipping microsoft.trusted.signing.client.1.0.76.zip
+powershell -Command "Expand-Archive -Path '%SCRIPT_PATH%microsoft.trusted.signing.client.1.0.76.zip' -DestinationPath '%SCRIPT_PATH%microsoft.trusted.signing.client'"
+call :check_command_status "unzip microsoft.trusted.signing.client.1.0.76.zip"
 
 
 REM Define files to sign
