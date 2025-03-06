@@ -25,6 +25,15 @@ function main()
         disp(cmdout);
     end
 
+    if ispc        
+        envFilePath = fullfile(currentFileDir, 'windows_signing', 'windows.env');
+        if ~isfile(envFilePath)
+            error('windows.env not found. Create a copy of windows_template.env, fill the values and rename it to windows.env.');
+        end
+        
+        loadenv(envFilePath);
+    end
+
     % Compile MATLAB code
     compileMATLABCode(currentBuildDir, appNameWithExt);
 
