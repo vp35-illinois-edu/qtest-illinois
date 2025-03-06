@@ -70,6 +70,48 @@ while sum((Anum./Aden)*(Vnum./Vden)'>(Bnum./Bden))>0
     valid=valid_sum/valid_count;
     [Vnum,Vden]=rat(valid,tol);
 end
-clear portavmex
-V=portavmex(Anum,Aden,Bnum,Bden,Vnum,Vden);
 
+if ismac && strcmp(computer('arch'), 'maca64')
+    method = 'cddgmpmex_combined';
+else
+    method = 'porta';
+end
+
+disp("H to V conversion - start using method " + method)
+
+switch method
+    case 'cddmex'
+        H = struct('A', A, 'B', B);
+        Hreduced = cddmex('reduce_h', H);
+        Vout = cddmex('extreme', Hreduced);
+        Vreduced = cddmex('reduce_v', Vout);
+        V = Vreduced.V;
+
+    case 'cddgmpmex'
+        H = struct('ANum', Anum, 'ADen', Aden, 'A', A, 'B', B, 'BNum', Bnum, 'BDen', Bden);
+        % Hreduced = cddgmpmex('reduce_h', H);
+        Hreduced  = H;
+        Vout = cddgmpmex('extreme', Hreduced);
+        % Vreduced = cddgmpmex('reduce_v', Vout);
+        Vreduced = Vout;
+        V = Vreduced.V;
+
+    case 'cddgmpmex_combined'
+        H = struct('ANum', Anum, 'ADen', Aden, 'A', A, 'B', B, 'BNum', Bnum, 'BDen', Bden);
+        Vout = cddgmpmex('reduce_all_extreme', H);
+        V = Vout.V;
+
+    case 'porta'
+        clear portavmex
+        V=portavmex(Anum,Aden,Bnum,Bden,Vnum,Vden);
+
+    otherwise
+        error('Unknown method specified');
+end
+
+if strcmp(method, 'porta') == 0
+    % Convert -0 to 0 to avoid potential issues with negative zero representation
+    V(V == 0) = 0;
+end
+
+disp("H to V conversion - done using method " + method)

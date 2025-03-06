@@ -25,8 +25,7 @@ OPTIONS="--options=runtime"
 TIMESTAMP="--timestamp"
 
 if [ "$(uname -m)" = "arm64" ]; then
-    FILES=("portamex.mexmaca64" "portavmex.mexmaca64")
-
+    FILES=("cddgmpmex.mexmaca64" "cddmex.mexmaca64")
 else
     FILES=("portamex.mexmaci64" "portavmex.mexmaci64")
 fi
