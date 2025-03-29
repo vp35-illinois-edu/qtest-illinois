@@ -1,6 +1,6 @@
-function [bayes2,bayes2_ext]=bayes_factor_2(m,A,B,Aeq,Beq,ineq_idx,N_actual,rstate,epsilon,progress)
-%BAYES_FACTOR_2 computes the Bayes factor using the direct method
-%   BAYES2=bayes_factor_2(M,A,B,AEQ,BEQ,INEQ_IDX,N,RSTATE,EPSILON)
+function [bayes2,bayes2_ext]=bayes_factor_gibbs(m,A,B,Aeq,Beq,ineq_idx,N_actual,rstate,epsilon,progress)
+%bayes_factor_gibbs computes the Bayes factor using the gibbs sampler method
+%   BAYES2=bayes_factor_gibbs(M,A,B,AEQ,BEQ,INEQ_IDX,N,RSTATE,EPSILON)
 %   
 %   M is the data matrix, where each row gives the outcome of a binomial
 %   test. For example, for a 3-dimensional case, with 20 observations per

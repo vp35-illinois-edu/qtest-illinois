@@ -90,12 +90,12 @@ n=size(m,1); %dimension
 
 if ismember('b1',options) || ismember('B1',options)
     t_this=tic;
-    res.bayes1=bayes_factor_1(m,A,B,N_actual,rstate);
+    res.bayes1=bayes_factor_draw_and_test(m,A,B,N_actual,rstate);
     res.b1_time=toc(t_this);
 end
 if ismember('b2',options) || ismember('B2',options)
     t_this=tic;
-    res.bayes2=bayes_factor_2(m,A,B,Aeq,Beq,ineq_idx,N_actual,rstate);
+    res.bayes2=bayes_factor_gibbs(m,A,B,Aeq,Beq,ineq_idx,N_actual,rstate);
     res.b2_time=toc(t_this);
 end
 if ismember('p',options) || ismember('P',options)
