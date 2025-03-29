@@ -22,7 +22,7 @@ function varargout = qtest(varargin)
 
 % Edit the above text to modify the response to help qtest
 
-% Last Modified by GUIDE v2.5 24-Oct-2018 17:30:45
+% Last Modified by GUIDE v2.5 28-Mar-2025 20:17:05
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -5214,4 +5214,27 @@ function checkbox_multicore_Callback(hObject, eventdata, handles)
 
 if get(handles.checkbox_multicore,'value')>0
     open_parallel_pool
+end
+
+
+% --- Executes on selection change in popupmenu_bayes_method.
+function popupmenu_bayes_method_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu_bayes_method (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_bayes_method contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu_bayes_method
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_bayes_method_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu_bayes_method (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
