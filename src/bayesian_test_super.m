@@ -156,7 +156,7 @@ for i=1:n_vert
             q=[];
         end
         if isempty(q)
-            res.bayes1(i)=bayes_factor_1(m,A,B,N_actual,rstate);
+            res.bayes1(i)=bayes_factor_draw_and_test(m,A,B,N_actual,rstate);
             if isjava(cache)
                 cache.update(key,res.bayes1(i));
             end
@@ -175,7 +175,7 @@ for i=1:n_vert
             q=[];
         end
         if isempty(q)
-            res.bayes2(i)=bayes_factor_2(m,A,B,Aeq,Beq,ineq_idx,N_actual,rstate);
+            res.bayes2(i)=bayes_factor_gibbs(m,A,B,Aeq,Beq,ineq_idx,N_actual,rstate);
             if isjava(cache)
                 cache.update(key,res.bayes2(i));
             end

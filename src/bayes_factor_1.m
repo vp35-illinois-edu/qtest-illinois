@@ -1,6 +1,6 @@
-function bayes1=bayes_factor_1(m,A,B,N_actual,rstate)
-%BAYES_FACTOR_1 computes the Bayes factor using the draw-and-test method
-%   BAYES1=bayes_factor_1(M,A,B,N,RSTATE)
+function bayes1=bayes_factor_draw_and_test(m,A,B,N_actual,rstate)
+%bayes_factor_draw_and_test computes the Bayes factor using the draw-and-test method
+%   BAYES1=bayes_factor_draw_and_test(M,A,B,N,RSTATE)
 %   
 %   M is the data matrix, where each row gives the outcome of a binomial
 %   test. For example, for a 3-dimensional case, with 20 observations per
