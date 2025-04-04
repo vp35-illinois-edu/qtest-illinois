@@ -720,6 +720,11 @@ function pushbutton_load_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [file,path]=uigetfile({'*.*','All Files'},'Load Data');
+if ~strcmp(file(end-3:end), '.mat')
+    msgbox('Invalid file. Please select a .mat file.', 'Error', 'modal');
+    return;
+end
+
 if file~=0
     f=load([path,file]);
     if ~isfield(f,'qtest_version') || (~isequal(f.qtest_version,'0.3') ...
